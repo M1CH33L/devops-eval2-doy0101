@@ -1,0 +1,44 @@
+1. Arquitectura y Orquestación
+El sistema se compone de dos microservicios independientes:
+
+Microservicio Python: Desarrollado con Flask. Incluye un endpoint /health para la verificación del estado del servicio y un endpoint para operaciones matemáticas de suma.
+
+Microservicio Java: Desarrollado con JDK 17 y Maven. Incluye lógica para multiplicación y validaciones numéricas. Se empaqueta mediante un Dockerfile multietapa (multi-stage build) para separar el entorno de compilación del entorno de ejecución final y optimizar el tamaño de la imagen.
+
+Ambos microservicios se orquestan mediante Docker Compose a través de una red privada (devops-network) en modo bridge, garantizando el aislamiento de la infraestructura y la comunicación interna por nombre de servicio.
+
+2. Política de Calidad de Código
+Python: Ejecución automatizada de pruebas unitarias mediante pytest.
+
+Java: Pruebas unitarias mediante JUnit 5. Se integra jacoco-maven-plugin para medir la cobertura de código, con una regla estricta que exige un mínimo del 80% de cobertura de líneas para aprobar la construcción.
+
+3. Seguridad y Security Gate
+Dependabot: Archivo de configuración que habilita el análisis diario de dependencias desactualizadas o vulnerables en pip y maven.
+
+Security Gate: Política de detención del pipeline en caso de fallos. El flujo de CI/CD se cancela automáticamente si:
+
+Falla alguna prueba unitaria en Python o Java.
+
+La cobertura de código en JaCoCo es menor al 80%.
+
+El escáner de seguridad Trivy detecta vulnerabilidades con nivel de severidad Alto o Crítico.
+
+4. Trazabilidad del Despliegue
+El flujo automatizado en GitHub Actions (.github/workflows/ci-cd.yml) se compone de cuatro etapas consecutivas:
+
+Test: Ejecución de pytest y mvn test con generación de reportes de cobertura.
+
+Security: Análisis estático de código y librerías con Trivy.
+
+Build: Construcción de las imágenes de Docker para ambos microservicios.
+
+Deploy: Levantamiento simulado del entorno con docker compose up y verificación de disponibilidad mediante curl.
+
+5. Declaración Ética de Uso de Inteligencia Artificial
+Herramientas utilizadas: Google Gemini
+
+Uso aplicado: Soporte en la estructura sintáctica de los archivos, readme, scripts java/python, pom.xml, docker-compose.yml y .github/workflows/ci-cd.yml.
+
+Validación humana: Revisión de parámetros, adecuación a la estructura de directorios del proyecto y prueba manual de comandos en consola local antes de subir los cambios al repositorio.
+
+(nota: a mi personalmente no me corrio bien el proyecto, pero por los errores que vi principalmente era porque a mi note [formateado recientemente] le faltan muchas dependencias y aplicaciones, pero el codigo en si no debiera tener problemas)

@@ -1,0 +1,111 @@
+name: CI/CD Pipeline - DevOps Assessment 2
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    name: 1. Pruebas Unitarias y Cobertura
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Entorno Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Dependencias y Ejecutar Tests Python
+        run: |
+          cd ms-python
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pytest --cov=. --cov-report=xml
+
+      - name: Configurar Entorno Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Ejecutar Pruebas Unitarias y Generar JaCoCo Java
+        run: |
+          cd ms-java
+          mvn clean test
+
+      - name: Archivar Reporte de Cobertura JaCoCo
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: ms-java/target/site/jacoco/
+
+  security:
+    name: 2. Análisis Estático y Security Gate
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Escaneo de Vulnerabilidades de Seguridad con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  build:
+    name: 3. Construcción de Imágenes Docker
+    needs: security
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construir Imagen Docker Microservicio Python
+        run: |
+          docker build -t ms-python:latest ./ms-python
+
+      - name: Construir Imagen Docker Microservicio Java (Multi-stage)
+        run: |
+          docker build -t ms-java:latest ./ms-java
+
+  deploy:
+    name: 4. Despliegue Simulado y Verificación
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Desplegar Entorno Orquestado con Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Validar Estado de Contenedores
+        run: |
+          docker compose ps
+          sleep 5
+          docker compose logs
+
+      - name: Validar Trazabilidad y Disponibilidad del Servicio
+        run: |
+          curl -f http://localhost:5000/health || exit 1
+
+      - name: Limpieza del Entorno
+        if: always()
+        run: |
+          docker compose down

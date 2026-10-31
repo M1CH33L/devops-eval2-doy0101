@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/ms-python"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "maven"
+    directory: "/ms-java"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
